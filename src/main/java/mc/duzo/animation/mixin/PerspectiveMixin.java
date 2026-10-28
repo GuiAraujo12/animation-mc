@@ -1,5 +1,6 @@
 package mc.duzo.animation.mixin;
 
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,30 +15,42 @@ import mc.duzo.animation.util.AnimationUtil;
 
 @Mixin(Perspective.class)
 public class PerspectiveMixin {
+    @Unique
+    private AnimationInfo animation$getAnimationInfo() {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
+        if (player == null) {
+            return null;
+        }
+
+        AnimationInfo info = AnimationUtil.getInfo(player);
+
+        if (info == null || info.perspective() == null) {
+            return null;
+        }
+
+        return info;
+    }
+
     @Inject(method = "isFirstPerson", at = @At("HEAD"), cancellable = true)
     private void animation$isFirstPerson(CallbackInfoReturnable<Boolean> cir) {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+    AnimationInfo info = animation$getAnimationInfo();
 
-        if (player == null) return;
-
-        AnimationInfo info = AnimationUtil.getInfo(player);
-
-        if (info == null) return;
-        if (info.perspective() == null) return;
-
-        cir.setReturnValue(info.perspective().isFirstPerson());
+    if (info == null) {
+        return;
     }
+
+    cir.setReturnValue(info.perspective().isFirstPerson());
+    }
+
     @Inject(method = "isFrontView", at = @At("HEAD"), cancellable = true)
     private void animation$isFrontView(CallbackInfoReturnable<Boolean> cir) {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+    AnimationInfo info = animation$getAnimationInfo();
 
-        if (player == null) return;
+    if (info == null) {
+        return;
+    }
 
-        AnimationInfo info = AnimationUtil.getInfo(player);
-
-        if (info == null) return;
-        if (info.perspective() == null) return;
-
-        cir.setReturnValue(info.perspective().isFrontView());
+    cir.setReturnValue(info.perspective().isFrontView());
     }
 }
